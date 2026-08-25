@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1081827987644-4pcuqk5eq9ba27piutev0ucsq6m2rj04.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cluifyy.word_hunting_app",
+            "certificate_hash": "3fb3c6d7d7a9af2deb7e8e9a0f387064149a3d14"
+          }
+        },
+        {
           "client_id": "1081827987644-86bfjtkkd2r472c3g34a81h54crcs9dl.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

@@ -30,6 +30,7 @@ class RoomProvider extends ChangeNotifier {
   String? errorCode;
   int? errorXpNeeded;
   int? xpChargedAmount;
+  String? disconnectedUid;
 
   bool _listening = false;
 
@@ -41,6 +42,15 @@ class RoomProvider extends ChangeNotifier {
     socketService.on('room:closed', _onClosed);
     socketService.on('error', _onError);
     socketService.on('room:xp_charged', _onXpCharged);
+    socketService.on('room:player_disconnected', _onPlayerDisconnected);
+    socketService.on('room:player_reconnected', _onPlayerReconnected);
+    // A socket reconnect (brief network drop) doesn't automatically put this
+    // player's socket back in the server's room broadcast group — only an
+    // explicit room:sync does that, and it also cancels the disconnect
+    // grace timer so the lobby isn't torn down from under them.
+    socketService.onConnect(() {
+      if (code != null) socketService.syncRoom();
+    });
   }
 
   void reset() {
@@ -51,6 +61,7 @@ class RoomProvider extends ChangeNotifier {
     errorCode = null;
     errorXpNeeded = null;
     xpChargedAmount = null;
+    disconnectedUid = null;
     notifyListeners();
   }
 
@@ -129,6 +140,17 @@ class RoomProvider extends ChangeNotifier {
   void _onXpCharged(dynamic data) {
     final json = Map<String, dynamic>.from(data as Map);
     xpChargedAmount = json['amount'] as int?;
+    notifyListeners();
+  }
+
+  void _onPlayerDisconnected(dynamic data) {
+    final json = Map<String, dynamic>.from(data as Map);
+    disconnectedUid = json['uid'] as String?;
+    notifyListeners();
+  }
+
+  void _onPlayerReconnected(dynamic data) {
+    disconnectedUid = null;
     notifyListeners();
   }
 }

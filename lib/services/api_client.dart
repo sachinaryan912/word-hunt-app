@@ -66,7 +66,7 @@ class DailyChallengeDto {
   final String date;
   final int puzzleNumber;
   final WordSearchGrid board;
-  final int timeLimitSeconds;
+  final int? timeLimitSeconds;
   final int? personalBest;
   final int? globalRankToday;
   final int totalParticipantsToday;
@@ -86,7 +86,7 @@ class DailyChallengeDto {
       date: json['date'] as String,
       puzzleNumber: json['puzzleNumber'] as int,
       board: WordSearchGrid.fromJson(json['board'] as Map<String, dynamic>),
-      timeLimitSeconds: json['timeLimitSeconds'] as int,
+      timeLimitSeconds: json['timeLimitSeconds'] as int?,
       personalBest: json['personalBest'] as int?,
       globalRankToday: json['globalRankToday'] as int?,
       totalParticipantsToday: json['totalParticipantsToday'] as int? ?? 0,
@@ -98,8 +98,17 @@ class DailyCompleteResult {
   final int score;
   final int bestScore;
   final int accuracy;
+  final int rankToday;
+  final int xpBonus;
   final PlayerProfile profile;
-  const DailyCompleteResult({required this.score, required this.bestScore, required this.accuracy, required this.profile});
+  const DailyCompleteResult({
+    required this.score,
+    required this.bestScore,
+    required this.accuracy,
+    required this.rankToday,
+    required this.xpBonus,
+    required this.profile,
+  });
 }
 
 class FriendEntry {
@@ -316,6 +325,8 @@ class ApiClient {
       score: json['score'] as int,
       bestScore: json['bestScore'] as int,
       accuracy: json['accuracy'] as int,
+      rankToday: json['rankToday'] as int? ?? 0,
+      xpBonus: json['xpBonus'] as int? ?? 0,
       profile: PlayerProfile.fromJson(json['profile'] as Map<String, dynamic>),
     );
   }

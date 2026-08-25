@@ -41,6 +41,13 @@ class SocketService {
     _socket?.on(event, handler);
   }
 
+  /// Fires on the initial connection and again on every automatic
+  /// reconnection (e.g. after a brief network drop) — the hook live
+  /// providers use to resync state the server can't push on its own.
+  void onConnect(void Function() handler) {
+    _socket?.on('connect', (_) => handler());
+  }
+
   void off(String event) {
     _socket?.off(event);
   }
@@ -60,12 +67,17 @@ class SocketService {
     emit('match:rejoin', {'matchId': matchId});
   }
 
+  void leaveMatch(String matchId) {
+    emit('match:leave', {'matchId': matchId});
+  }
+
   void createRoom() => emit('room:create');
   void joinRoom(String code) => emit('room:join', {'code': code});
   void setRoomReady(String code, bool ready) => emit('room:ready', {'code': code, 'ready': ready});
   void leaveRoom(String code) => emit('room:leave', {'code': code});
   void startRoom(String code) => emit('room:start', {'code': code});
   void inviteToRoom(String code, String friendUid) => emit('room:invite', {'code': code, 'friendUid': friendUid});
+  void syncRoom() => emit('room:sync');
 
   void sendChat(String channel, String text) => emit('chat:send', {'channel': channel, 'text': text});
 }

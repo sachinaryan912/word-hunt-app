@@ -36,7 +36,7 @@ class MatchProvider extends ChangeNotifier {
   MultiplayerMatchState? state;
   int startAt = 0;
   int endAt = 0;
-  int durationSeconds = 90;
+  int durationSeconds = 180;
   bool opponentConnected = true;
   MatchEndInfo? endInfo;
 
@@ -54,6 +54,15 @@ class MatchProvider extends ChangeNotifier {
     socketService.on('player:disconnected', _onOpponentDisconnected);
     socketService.on('player:reconnected', _onOpponentReconnected);
     socketService.on('match:end', _onMatchEnd);
+    // A socket reconnect (brief network drop) doesn't automatically restore
+    // this player's "connected" flag or cancel the opponent-side forfeit
+    // timer server-side — only an explicit match:rejoin does that.
+    socketService.onConnect(() {
+      final id = matchId;
+      if (id != null && status == MatchmakingStatus.active) {
+        socketService.rejoinMatch(id);
+      }
+    });
   }
 
   void reset() {

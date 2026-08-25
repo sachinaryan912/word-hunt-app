@@ -29,6 +29,8 @@ class MatchResultScreen extends StatefulWidget {
   final int? ratingDelta;
   final int? newRating;
   final bool isDailyChallenge;
+  final int? dailyRankToday;
+  final int? dailyXpBonus;
 
   const MatchResultScreen({
     super.key,
@@ -43,6 +45,8 @@ class MatchResultScreen extends StatefulWidget {
     this.ratingDelta,
     this.newRating,
     this.isDailyChallenge = false,
+    this.dailyRankToday,
+    this.dailyXpBonus,
   });
 
   @override
@@ -68,6 +72,16 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
     if (_isSolo) {
       _adsService.preloadInterstitial();
       if (widget.isWin) _adsService.preloadRewarded(RewardedPlacement.matchBonus);
+    } else {
+      // Solo/daily already pushed their updated profile in via applyProfile()
+      // before navigating here. A PvP match's rating/wins/xp are only known
+      // once the server ends the match, and nothing else refreshes them —
+      // without this, the rest of the app (Profile screen, etc.) keeps
+      // showing pre-match stats until some unrelated action happens to
+      // trigger a refresh.
+      final session = context.read<SessionState>();
+      session.refreshProfile();
+      session.refreshAchievements();
     }
   }
 
@@ -247,6 +261,14 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
                           _buildStatRow('Accuracy Rate', '${widget.accuracyPercent}%'),
                           const SizedBox(height: 12),
                           _buildStatRow('Match Duration', _formatDuration(widget.durationSeconds)),
+                          if (widget.isDailyChallenge && widget.dailyRankToday != null) ...[
+                            const SizedBox(height: 12),
+                            _buildStatRow('Today\'s Rank', '#${widget.dailyRankToday}'),
+                          ],
+                          if (widget.isDailyChallenge && (widget.dailyXpBonus ?? 0) > 0) ...[
+                            const SizedBox(height: 12),
+                            _buildStatRow('Rank Bonus', '+${widget.dailyXpBonus} XP'),
+                          ],
                           if (widget.opponentName != null) ...[
                             const SizedBox(height: 12),
                             _buildStatRow(

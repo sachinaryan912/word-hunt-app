@@ -23,7 +23,7 @@ const _faqEntries = [
   ),
   _FaqEntry(
     'How does a Private Room work?',
-    'Create a room to get a 6-digit code, then share it (or send an in-app invite to a friend). Once you\'re both marked ready, the host can start the match.',
+    'Create a room to get a 6-digit code, then share it (or send an in-app invite to a friend). Once you\'re both marked ready, the host can start the match. Private Room matches have no time limit — take as long as you need.',
   ),
   _FaqEntry(
     'How many private rooms can I create per day?',
@@ -35,7 +35,7 @@ const _faqEntries = [
   ),
   _FaqEntry(
     'What is the Daily Challenge?',
-    'A new editorial puzzle every day, the same for all players, with a time limit and a global leaderboard. It refreshes every 24 hours at midnight UTC.',
+    'A new editorial puzzle every day, the same for all players, with no time limit and a global leaderboard. It refreshes every 24 hours at midnight UTC.',
   ),
   _FaqEntry(
     'How do I earn XP?',

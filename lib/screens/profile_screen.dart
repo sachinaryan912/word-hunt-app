@@ -154,6 +154,15 @@ class ProfileScreen extends StatelessWidget {
                                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${profile.xp} TOTAL XP',
+                              style: GoogleFonts.nunito(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondaryLight,
+                              ),
+                            ),
                           ],
                         ),
                       ),

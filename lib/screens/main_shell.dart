@@ -19,12 +19,21 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late int _currentIndex;
+  final _leaderboardKey = GlobalKey<LeaderboardScreenState>();
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialTab;
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+  }
+
+  void _switchTab(int index) {
+    setState(() => _currentIndex = index);
+    // The tab screens live in an IndexedStack and never dispose, so a tab
+    // that fetches data once in initState (like Leaderboard) would keep
+    // showing stale results from the first time it was ever opened.
+    if (index == 1) _leaderboardKey.currentState?.refresh();
   }
 
   Future<void> _checkForUpdate() async {
@@ -53,8 +62,8 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      HomeScreen(onNavigateTab: (index) => setState(() => _currentIndex = index)),
-      const LeaderboardScreen(isEmbedded: true),
+      HomeScreen(onNavigateTab: _switchTab),
+      LeaderboardScreen(key: _leaderboardKey, isEmbedded: true),
       const ProfileScreen(isEmbedded: true),
       const SettingsScreen(isEmbedded: true),
     ];
@@ -66,7 +75,7 @@ class _MainShellState extends State<MainShell> {
       ),
       bottomNavigationBar: AppBottomNav(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: _switchTab,
       ),
     );
   }

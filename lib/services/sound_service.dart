@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,21 +26,26 @@ class SoundService with WidgetsBindingObserver {
 
   bool _musicEnabled = true;
   bool _effectsEnabled = true;
+  bool _hapticsEnabled = true;
   bool _musicStarted = false;
   bool _pausedForBackground = false;
   bool _effectSourceReady = false;
   Future<void> _musicOpChain = Future.value();
+  late final Future<void> _prefsLoaded;
 
   SoundService() {
-    _loadPrefs();
+    _prefsLoaded = _loadPrefs();
     // A one-shot effect must not request exclusive audio focus — by default
     // audioplayers does, and on Android that silently pauses any other
     // player in the app (including our own looping music) the instant a
-    // sound effect plays.
+    // sound effect plays. contentType/usageType are deliberately left at
+    // their music/media defaults (matching _musicPlayer) — routing this
+    // through AndroidContentType.sonification instead puts it on a separate
+    // audio-attributes stream that's commonly muted independently of media
+    // volume (silent mode, Do Not Disturb, notification volume), which was
+    // why the sound stayed silent even while background music kept playing.
     _effectPlayer.setAudioContext(AudioContext(
       android: const AudioContextAndroid(
-        contentType: AndroidContentType.sonification,
-        usageType: AndroidUsageType.assistanceSonification,
         audioFocus: AndroidAudioFocus.none,
       ),
       iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
@@ -69,6 +75,7 @@ class SoundService with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     _musicEnabled = prefs.getBool('pref_music') ?? true;
     _effectsEnabled = prefs.getBool('pref_sound') ?? true;
+    _hapticsEnabled = prefs.getBool('pref_haptics') ?? true;
   }
 
   @override
@@ -103,6 +110,10 @@ class SoundService with WidgetsBindingObserver {
     _effectsEnabled = enabled;
   }
 
+  void setHapticsEnabled(bool enabled) {
+    _hapticsEnabled = enabled;
+  }
+
   Future<void> _runMusicOp(Future<void> Function() op) {
     _musicOpChain = _musicOpChain.then((_) => op()).catchError((_) {});
     return _musicOpChain;
@@ -110,10 +121,17 @@ class SoundService with WidgetsBindingObserver {
 
   /// Starts the background music loop. Safe to call multiple times — only
   /// the first call (or a resume after [setMusicEnabled]) actually plays.
-  Future<void> playBackgroundMusic() {
-    if (!_musicEnabled || _musicStarted) return Future.value();
+  ///
+  /// Called from SplashScreen.initState() the instant the app launches —
+  /// the same moment the constructor kicks off [_loadPrefs] — so without
+  /// waiting for it here, this would read [_musicEnabled]'s default `true`
+  /// before the saved "Background Music" preference has actually loaded,
+  /// starting the music on every cold start regardless of that setting.
+  Future<void> playBackgroundMusic() async {
+    await _prefsLoaded;
+    if (!_musicEnabled || _musicStarted) return;
     _musicStarted = true;
-    return _runMusicOp(() => _musicPlayer.play(AssetSource(_musicAsset), volume: 0.35));
+    await _runMusicOp(() => _musicPlayer.play(AssetSource(_musicAsset), volume: 0.35));
   }
 
   Future<void> pauseBackgroundMusic() => _runMusicOp(() => _musicPlayer.pause());
@@ -142,6 +160,14 @@ class SoundService with WidgetsBindingObserver {
     } catch (_) {
       // Best-effort — a missed sound effect shouldn't affect gameplay.
     }
+  }
+
+  /// Buzzes on word-found, gated by the "Haptic Feedback" setting — mirrors
+  /// [playWordFoundSound]'s "Sound Effects" gating but is otherwise
+  /// independent, so either can be toggled off without touching the other.
+  void triggerWordFoundHaptic() {
+    if (!_hapticsEnabled) return;
+    HapticFeedback.mediumImpact();
   }
 
   void dispose() {

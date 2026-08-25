@@ -9,6 +9,7 @@ import '../widgets/cartoon_background.dart';
 import '../widgets/cartoon_button.dart';
 import '../widgets/cartoon_card.dart';
 import '../widgets/mascot_widget.dart';
+import '../widgets/state_indicators.dart';
 import '../state/room_provider.dart';
 import '../state/match_provider.dart';
 import '../state/session_state.dart';
@@ -75,8 +76,11 @@ class _PrivateRoomScreenState extends State<PrivateRoomScreen> {
       roomProvider.clearError();
       final message = errorCode == 'insufficient_xp_for_room'
           ? "You've used today's 5 free rooms and don't have enough XP (${xpNeeded ?? 10}) to create another."
-          : _roomErrorMessages[errorCode] ?? 'Something went wrong — please try again.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+          : _roomErrorMessages[errorCode] ??
+                'Something went wrong — please try again.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
       if (errorCode == 'insufficient_xp_for_room') {
         Navigator.of(context).pop();
       }
@@ -88,7 +92,11 @@ class _PrivateRoomScreenState extends State<PrivateRoomScreen> {
       roomProvider.clearXpCharge();
       context.read<SessionState>().refreshProfile();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Today's free rooms are used — $amount XP charged for this one.")),
+        SnackBar(
+          content: Text(
+            "Today's free rooms are used — $amount XP charged for this one.",
+          ),
+        ),
       );
     }
 
@@ -125,7 +133,10 @@ class _PrivateRoomScreenState extends State<PrivateRoomScreen> {
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Room code copied to clipboard', style: GoogleFonts.fredoka(color: Colors.black)),
+        content: Text(
+          'Room code copied to clipboard',
+          style: GoogleFonts.fredoka(color: Colors.black),
+        ),
         duration: const Duration(seconds: 1),
         backgroundColor: AppColors.primaryYellow,
         behavior: SnackBarBehavior.floating,
@@ -144,231 +155,306 @@ class _PrivateRoomScreenState extends State<PrivateRoomScreen> {
     final roomProvider = context.watch<RoomProvider>();
     final myUid = context.watch<SessionState>().profile?.id;
     final isMeHost = roomProvider.host?.uid == myUid;
-    final joined = roomProvider.code != null && (isMeHost || roomProvider.guest?.uid == myUid);
-    final bothReady = (roomProvider.host?.ready ?? false) && (roomProvider.guest?.ready ?? false) && roomProvider.guest != null;
+    final joined =
+        roomProvider.code != null &&
+        (isMeHost || roomProvider.guest?.uid == myUid);
+    final bothReady =
+        (roomProvider.host?.ready ?? false) &&
+        (roomProvider.guest?.ready ?? false) &&
+        roomProvider.guest != null;
 
     return Scaffold(
       appBar: const AppHeader(title: 'PRIVATE LOBBY'),
       body: CartoonBackground(
         mode: CartoonBackgroundMode.dashboard,
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Segmented Tab Toggle (Host / Join)
-                Row(
-                  children: [
-                    Expanded(
-                      child: CartoonButton(
-                        text: 'CREATE ROOM',
-                        onPressed: () => _switchMode(true),
-                        variant: _isHost ? CartoonButtonVariant.primary : CartoonButtonVariant.outline,
-                        height: 46,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: CartoonButton(
-                        text: 'JOIN ROOM',
-                        onPressed: () => _switchMode(false),
-                        variant: !_isHost ? CartoonButtonVariant.primary : CartoonButtonVariant.outline,
-                        height: 46,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+          child: Column(
+            children: [
+              if (roomProvider.disconnectedUid != null &&
+                  roomProvider.disconnectedUid != myUid)
+                const ReconnectingBanner(
+                  text: 'Opponent disconnected — waiting to reconnect...',
                 ),
-                const SizedBox(height: 24),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Segmented Tab Toggle (Host / Join)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CartoonButton(
+                              text: 'CREATE ROOM',
+                              onPressed: () => _switchMode(true),
+                              variant: _isHost
+                                  ? CartoonButtonVariant.primary
+                                  : CartoonButtonVariant.outline,
+                              height: 46,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: CartoonButton(
+                              text: 'JOIN ROOM',
+                              onPressed: () => _switchMode(false),
+                              variant: !_isHost
+                                  ? CartoonButtonVariant.primary
+                                  : CartoonButtonVariant.outline,
+                              height: 46,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
 
-                if (_isHost) ...[
-                  // Room Code Display Card — shows a "Generate Code" prompt
-                  // until the player explicitly asks for one, rather than
-                  // spending a free room the moment this screen opens.
-                  CartoonCard(
-                    color: AppColors.surfaceCardDark,
-                    padding: const EdgeInsets.all(20),
-                    child: roomProvider.code == null
-                        ? Column(
+                      if (_isHost) ...[
+                        // Room Code Display Card — shows a "Generate Code" prompt
+                        // until the player explicitly asks for one, rather than
+                        // spending a free room the moment this screen opens.
+                        CartoonCard(
+                          color: AppColors.surfaceCardDark,
+                          padding: const EdgeInsets.all(20),
+                          child: roomProvider.code == null
+                              ? Column(
+                                  children: [
+                                    Icon(
+                                      LucideIcons.keyRound,
+                                      size: 32,
+                                      color: AppColors.textMuted,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'Generate a room code to invite an opponent',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 13,
+                                        color: AppColors.textSecondaryLight,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    CartoonButton(
+                                      text: 'GENERATE CODE',
+                                      onPressed: _generateCode,
+                                      variant: CartoonButtonVariant.primary,
+                                      width: double.infinity,
+                                      height: 46,
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  children: [
+                                    Text(
+                                      'ROOM CODE',
+                                      style: GoogleFonts.fredoka(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1.5,
+                                        color: AppColors.primaryOrange,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          roomProvider.code!,
+                                          style: GoogleFonts.fredoka(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 4.0,
+                                            color: AppColors.primaryYellow,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.copy_rounded,
+                                            size: 22,
+                                            color: AppColors.primaryYellow,
+                                          ),
+                                          onPressed: () =>
+                                              _copyCode(roomProvider.code!),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            LucideIcons.userPlus,
+                                            size: 22,
+                                            color: AppColors.skyBlue,
+                                          ),
+                                          onPressed: () =>
+                                              FriendInviteSheet.show(
+                                                context,
+                                                context
+                                                    .read<SessionState>()
+                                                    .apiClient,
+                                                (friendUid) => roomProvider
+                                                    .invite(friendUid),
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Share this 6-digit code with your opponent',
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 13,
+                                        color: AppColors.textSecondaryLight,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ] else ...[
+                        // Enter Join Code Card
+                        CartoonCard(
+                          color: AppColors.surfaceCardDark,
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(LucideIcons.keyRound, size: 32, color: AppColors.textMuted),
-                              const SizedBox(height: 10),
                               Text(
-                                'Generate a room code to invite an opponent',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.nunito(fontSize: 13, color: AppColors.textSecondaryLight),
-                              ),
-                              const SizedBox(height: 14),
-                              CartoonButton(
-                                text: 'GENERATE CODE',
-                                onPressed: _generateCode,
-                                variant: CartoonButtonVariant.primary,
-                                width: double.infinity,
-                                height: 46,
-                              ),
-                            ],
-                          )
-                        : Column(
-                            children: [
-                              Text(
-                                'ROOM CODE',
+                                'ENTER 6-DIGIT ROOM CODE',
                                 style: GoogleFonts.fredoka(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.5,
+                                  letterSpacing: 1.2,
                                   color: AppColors.primaryOrange,
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    roomProvider.code!,
-                                    style: GoogleFonts.fredoka(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 4.0,
-                                      color: AppColors.primaryYellow,
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: _joinCodeController,
+                                style: GoogleFonts.fredoka(
+                                  fontSize: 20,
+                                  letterSpacing: 3.0,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimaryLight,
+                                ),
+                                keyboardType: TextInputType.number,
+                                maxLength: 6,
+                                onSubmitted: (_) => _joinRoom(),
+                                decoration: InputDecoration(
+                                  hintText: '000000',
+                                  hintStyle: GoogleFonts.fredoka(
+                                    color: AppColors.textMuted,
+                                  ),
+                                  filled: true,
+                                  fillColor: AppColors.surfaceElevated,
+                                  counterText: '',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.surfaceBorderDark,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  IconButton(
-                                    icon: const Icon(Icons.copy_rounded, size: 22, color: AppColors.primaryYellow),
-                                    onPressed: () => _copyCode(roomProvider.code!),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(LucideIcons.userPlus, size: 22, color: AppColors.skyBlue),
-                                    onPressed: () => FriendInviteSheet.show(
-                                      context,
-                                      context.read<SessionState>().apiClient,
-                                      (friendUid) => roomProvider.invite(friendUid),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                              const SizedBox(height: 6),
+                              if (!joined) ...[
+                                const SizedBox(height: 14),
+                                CartoonButton(
+                                  text: 'JOIN ROOM',
+                                  onPressed:
+                                      _joinCodeController.text.trim().length ==
+                                          6
+                                      ? _joinRoom
+                                      : null,
+                                  variant: CartoonButtonVariant.secondary,
+                                  width: double.infinity,
+                                  height: 46,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      Text(
+                        'LOBBY PARTICIPANTS',
+                        style: GoogleFonts.fredoka(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                          color: AppColors.skyBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      if (roomProvider.host != null)
+                        _buildPlayerRow(
+                          name: '${roomProvider.host!.displayName} (Host)',
+                          rating: '${roomProvider.host!.rating} MMR',
+                          isReady: roomProvider.host!.ready,
+                          onToggleReady: isMeHost
+                              ? () => roomProvider.setReady(
+                                  !roomProvider.host!.ready,
+                                )
+                              : null,
+                        ),
+                      const SizedBox(height: 10),
+                      if (roomProvider.guest != null)
+                        _buildPlayerRow(
+                          name: roomProvider.guest!.displayName,
+                          rating: '${roomProvider.guest!.rating} MMR',
+                          isReady: roomProvider.guest!.ready,
+                          onToggleReady: !isMeHost
+                              ? () => roomProvider.setReady(
+                                  !roomProvider.guest!.ready,
+                                )
+                              : null,
+                        )
+                      else
+                        CartoonCard(
+                          color: AppColors.surfaceCardDark,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          child: Row(
+                            children: [
+                              const MascotWidget(
+                                pose: MascotPose.searching,
+                                size: 40,
+                                autoAnimate: false,
+                              ),
+                              const SizedBox(width: 12),
                               Text(
-                                'Share this 6-digit code with your opponent',
-                                style: GoogleFonts.nunito(fontSize: 13, color: AppColors.textSecondaryLight),
+                                'Waiting for opponent to join...',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondaryLight,
+                                ),
                               ),
                             ],
                           ),
-                  ),
-                ] else ...[
-                  // Enter Join Code Card
-                  CartoonCard(
-                    color: AppColors.surfaceCardDark,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ENTER 6-DIGIT ROOM CODE',
-                          style: GoogleFonts.fredoka(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                            color: AppColors.primaryOrange,
-                          ),
                         ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _joinCodeController,
-                          style: GoogleFonts.fredoka(
-                            fontSize: 20,
-                            letterSpacing: 3.0,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimaryLight,
-                          ),
-                          keyboardType: TextInputType.number,
-                          maxLength: 6,
-                          onSubmitted: (_) => _joinRoom(),
-                          decoration: InputDecoration(
-                            hintText: '000000',
-                            hintStyle: GoogleFonts.fredoka(color: AppColors.textMuted),
-                            filled: true,
-                            fillColor: AppColors.surfaceElevated,
-                            counterText: '',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: AppColors.surfaceBorderDark),
-                            ),
-                          ),
-                        ),
-                        if (!joined) ...[
-                          const SizedBox(height: 14),
-                          CartoonButton(
-                            text: 'JOIN ROOM',
-                            onPressed: _joinCodeController.text.trim().length == 6 ? _joinRoom : null,
-                            variant: CartoonButtonVariant.secondary,
-                            width: double.infinity,
-                            height: 46,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
 
-                const SizedBox(height: 24),
+                      const Spacer(),
 
-                Text(
-                  'LOBBY PARTICIPANTS',
-                  style: GoogleFonts.fredoka(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                    color: AppColors.skyBlue,
+                      // Start Match Action Button
+                      CartoonButton(
+                        text: isMeHost ? 'START MATCH' : 'WAITING FOR HOST',
+                        onPressed: (isMeHost && bothReady)
+                            ? () => roomProvider.start()
+                            : null,
+                        variant: CartoonButtonVariant.primary,
+                        width: double.infinity,
+                        height: 54,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-
-                if (roomProvider.host != null)
-                  _buildPlayerRow(
-                    name: '${roomProvider.host!.displayName} (Host)',
-                    rating: '${roomProvider.host!.rating} MMR',
-                    isReady: roomProvider.host!.ready,
-                    onToggleReady: isMeHost ? () => roomProvider.setReady(!roomProvider.host!.ready) : null,
-                  ),
-                const SizedBox(height: 10),
-                if (roomProvider.guest != null)
-                  _buildPlayerRow(
-                    name: roomProvider.guest!.displayName,
-                    rating: '${roomProvider.guest!.rating} MMR',
-                    isReady: roomProvider.guest!.ready,
-                    onToggleReady: !isMeHost ? () => roomProvider.setReady(!roomProvider.guest!.ready) : null,
-                  )
-                else
-                  CartoonCard(
-                    color: AppColors.surfaceCardDark,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    child: Row(
-                      children: [
-                        const MascotWidget(pose: MascotPose.searching, size: 40, autoAnimate: false),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Waiting for opponent to join...',
-                          style: GoogleFonts.nunito(fontSize: 14, color: AppColors.textSecondaryLight),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                const Spacer(),
-
-                // Start Match Action Button
-                CartoonButton(
-                  text: isMeHost ? 'START MATCH' : 'WAITING FOR HOST',
-                  onPressed: (isMeHost && bothReady) ? () => roomProvider.start() : null,
-                  variant: CartoonButtonVariant.primary,
-                  width: double.infinity,
-                  height: 54,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -399,7 +485,11 @@ class _PrivateRoomScreenState extends State<PrivateRoomScreen> {
                   child: Center(
                     child: Text(
                       name[0],
-                      style: GoogleFonts.fredoka(fontWeight: FontWeight.w700, fontSize: 18, color: AppColors.bgDarkNavy),
+                      style: GoogleFonts.fredoka(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: AppColors.bgDarkNavy,
+                      ),
                     ),
                   ),
                 ),
@@ -412,10 +502,20 @@ class _PrivateRoomScreenState extends State<PrivateRoomScreen> {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.fredoka(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight),
+                        style: GoogleFonts.fredoka(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimaryLight,
+                        ),
                       ),
                       const SizedBox(height: 2),
-                      Text(rating, style: GoogleFonts.nunito(fontSize: 12, color: AppColors.textSecondaryLight)),
+                      Text(
+                        rating,
+                        style: GoogleFonts.nunito(
+                          fontSize: 12,
+                          color: AppColors.textSecondaryLight,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -426,9 +526,14 @@ class _PrivateRoomScreenState extends State<PrivateRoomScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: isReady ? AppColors.freshGreen : AppColors.surfaceBorderDark,
+                  color: isReady
+                      ? AppColors.freshGreen
+                      : AppColors.surfaceBorderDark,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -446,7 +551,11 @@ class _PrivateRoomScreenState extends State<PrivateRoomScreen> {
                   onPressed: onToggleReady,
                   child: Text(
                     isReady ? 'Unready' : 'Set Ready',
-                    style: GoogleFonts.nunito(fontSize: 12, color: AppColors.skyBlue, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.nunito(
+                      fontSize: 12,
+                      color: AppColors.skyBlue,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],

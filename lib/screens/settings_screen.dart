@@ -270,6 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (val) {
                   setState(() => _hapticsEnabled = val);
                   _setPref('pref_haptics', val);
+                  context.read<SoundService>().setHapticsEnabled(val);
                 },
               ),
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -25,11 +27,35 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
   DailyChallengeDto? _challenge;
   bool _isLoading = true;
   bool _hasError = false;
+  Timer? _countdownTimer;
+  Duration _timeUntilNextPuzzle = Duration.zero;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _updateCountdown();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) => _updateCountdown());
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _updateCountdown() {
+    final now = DateTime.now().toUtc();
+    final nextMidnightUtc = DateTime.utc(now.year, now.month, now.day).add(const Duration(days: 1));
+    final remaining = nextMidnightUtc.difference(now);
+    if (mounted) setState(() => _timeUntilNextPuzzle = remaining.isNegative ? Duration.zero : remaining);
+  }
+
+  String _formatCountdown(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   Future<void> _load() async {
@@ -153,7 +179,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
                       const SizedBox(height: 10),
                       _buildRow('Target Words', '${challenge.board.targetWords.length} Hidden Words'),
                       const SizedBox(height: 10),
-                      _buildRow('Time Limit', '${challenge.timeLimitSeconds} Seconds'),
+                      _buildRow('Time Limit', challenge.timeLimitSeconds != null ? '${challenge.timeLimitSeconds} Seconds' : 'No Time Limit'),
                       const SizedBox(height: 10),
                       _buildRow('Personal Best', challenge.personalBest != null ? '${challenge.personalBest} PTS' : 'Not attempted yet'),
                       const SizedBox(height: 10),
@@ -190,16 +216,27 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
 
           const Spacer(),
 
+          if (challenge.personalBest != null) ...[
+            Text(
+              "Come back in ${_formatCountdown(_timeUntilNextPuzzle)} for tomorrow's puzzle",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondaryLight),
+            ),
+            const SizedBox(height: 10),
+          ],
+
           // CTA Action Button
           CartoonButton(
-            text: 'START CHALLENGE',
-            onPressed: () {
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute(builder: (_) => SoloLevelScreen(dailyChallenge: challenge)),
-                  )
-                  .then((_) => _load());
-            },
+            text: challenge.personalBest != null ? 'COMPLETED TODAY' : 'START CHALLENGE',
+            onPressed: challenge.personalBest != null
+                ? null
+                : () {
+                    Navigator.of(context)
+                        .push(
+                          MaterialPageRoute(builder: (_) => SoloLevelScreen(dailyChallenge: challenge)),
+                        )
+                        .then((_) => _load());
+                  },
             variant: CartoonButtonVariant.primary,
             width: double.infinity,
             height: 54,

@@ -107,7 +107,9 @@ class _SoloLevelScreenState extends State<SoloLevelScreen> {
           _showScorePopup = true;
         });
 
-        context.read<SoundService>().playWordFoundSound();
+        final soundService = context.read<SoundService>();
+        soundService.playWordFoundSound();
+        soundService.triggerWordFoundHaptic();
         _confettiController.play();
 
         Future.delayed(const Duration(milliseconds: 1500), () {
@@ -183,6 +185,8 @@ class _SoloLevelScreenState extends State<SoloLevelScreen> {
 
     int score = wordsFound * 60;
     int accuracy = 100;
+    int? dailyRankToday;
+    int? dailyXpBonus;
 
     final apiClient = context.read<ApiClient>();
     final isDaily = widget.dailyChallenge != null;
@@ -196,6 +200,8 @@ class _SoloLevelScreenState extends State<SoloLevelScreen> {
         );
         score = result.score;
         accuracy = result.accuracy;
+        dailyRankToday = result.rankToday;
+        dailyXpBonus = result.xpBonus;
         if (mounted) context.read<SessionState>().applyProfile(result.profile);
       } else {
         final result = await apiClient.soloComplete(
@@ -229,6 +235,8 @@ class _SoloLevelScreenState extends State<SoloLevelScreen> {
           durationSeconds: _secondsElapsed,
           opponentName: null,
           isDailyChallenge: isDaily,
+          dailyRankToday: dailyRankToday,
+          dailyXpBonus: dailyXpBonus,
         ),
       ),
     );
@@ -251,7 +259,13 @@ class _SoloLevelScreenState extends State<SoloLevelScreen> {
       );
     }
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _showPauseDialog();
+      },
+      child: Scaffold(
       body: CartoonBackground(
         mode: CartoonBackgroundMode.gameplay,
         child: Stack(
@@ -433,6 +447,7 @@ class _SoloLevelScreenState extends State<SoloLevelScreen> {
               ),
           ],
         ),
+      ),
       ),
     );
   }

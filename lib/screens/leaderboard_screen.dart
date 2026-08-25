@@ -17,10 +17,10 @@ class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key, this.isEmbedded = false});
 
   @override
-  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
+  State<LeaderboardScreen> createState() => LeaderboardScreenState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
+class LeaderboardScreenState extends State<LeaderboardScreen> {
   LeaderboardTab _activeTab = LeaderboardTab.global;
   LeaderboardPeriod _activePeriod = LeaderboardPeriod.weekly;
   List<LeaderboardEntry> _entries = [];
@@ -32,6 +32,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     super.initState();
     _load();
   }
+
+  /// Called by MainShell whenever the Leaderboard tab is switched to — this
+  /// screen stays alive in an IndexedStack, so without this it would keep
+  /// showing whatever was fetched the first time the tab was ever opened.
+  void refresh() => _load();
 
   String get _periodParam {
     if (_activeTab == LeaderboardTab.friends) return 'global';
@@ -49,9 +54,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     setState(() => _isLoading = true);
     try {
       final result = await context.read<ApiClient>().getLeaderboard(
-            period: _periodParam,
-            scope: _activeTab == LeaderboardTab.friends ? 'friends' : 'all',
-          );
+        period: _periodParam,
+        scope: _activeTab == LeaderboardTab.friends ? 'friends' : 'all',
+      );
       if (!mounted) return;
       setState(() {
         _entries = result.entries;
@@ -81,7 +86,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     final apiClient = context.read<ApiClient>();
 
     return Scaffold(
-      appBar: widget.isEmbedded ? null : const AppHeader(title: 'LEADERBOARD', showBack: false),
+      appBar: widget.isEmbedded
+          ? null
+          : const AppHeader(title: 'LEADERBOARD', showBack: false),
       body: CartoonBackground(
         mode: CartoonBackgroundMode.dashboard,
         child: SafeArea(
@@ -103,7 +110,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
               // Segmented Tabs (Global / Friends)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -118,12 +128,25 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(LucideIcons.inbox, size: 20, color: AppColors.textSecondaryLight),
-                            onPressed: () => FriendRequestsSheet.show(context, apiClient, onChanged: _load),
+                            icon: const Icon(
+                              LucideIcons.inbox,
+                              size: 20,
+                              color: AppColors.textSecondaryLight,
+                            ),
+                            onPressed: () => FriendRequestsSheet.show(
+                              context,
+                              apiClient,
+                              onChanged: _load,
+                            ),
                           ),
                           IconButton(
-                            icon: const Icon(LucideIcons.userPlus, size: 20, color: AppColors.skyBlue),
-                            onPressed: () => FriendSearchSheet.show(context, apiClient),
+                            icon: const Icon(
+                              LucideIcons.userPlus,
+                              size: 20,
+                              color: AppColors.skyBlue,
+                            ),
+                            onPressed: () =>
+                                FriendSearchSheet.show(context, apiClient),
                           ),
                         ],
                       ),
@@ -135,7 +158,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               // Filter Chips (Daily / Weekly / Monthly)
               if (_activeTab == LeaderboardTab.global)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   child: Row(
                     children: [
                       _buildPeriodChip('Daily', LeaderboardPeriod.daily),
@@ -149,83 +175,111 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
               // Ranked List
               Expanded(
-                child: _isLoading
-                    ? ListView.builder(
-                        itemCount: 8,
-                        itemBuilder: (context, index) => const SkeletonListTile(),
-                      )
-                    : _entries.isEmpty
-                        ? EmptyStateView(
-                            title: _activeTab == LeaderboardTab.friends ? 'No friends yet' : 'No rankings yet',
-                            description: _activeTab == LeaderboardTab.friends
-                                ? 'Add friends to see how you compare.'
-                                : 'Play a ranked match to appear on the leaderboard.',
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                            itemCount: _entries.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final entry = _entries[index];
-                              final isTop3 = entry.rank <= 3;
-                              final rankColor = entry.rank == 1
-                                  ? AppColors.primaryYellow
-                                  : entry.rank == 2
-                                      ? AppColors.skyBlue
-                                      : entry.rank == 3
-                                          ? AppColors.primaryOrange
-                                          : AppColors.textMuted;
-
-                              return CartoonCard(
-                                color: entry.isCurrentUser ? AppColors.royalBlue : AppColors.surfaceCardDark,
-                                bevelColor: entry.isCurrentUser ? AppColors.royalBlueBevel : AppColors.surfaceBorderDark,
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                child: Row(
-                                  children: [
-                                    // Rank Badge
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (isTop3) ...[
-                                          Icon(LucideIcons.trophy, size: 16, color: rankColor),
-                                          const SizedBox(width: 4),
-                                        ],
-                                        Text(
-                                          '#${entry.rank}',
-                                          style: GoogleFonts.fredoka(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: rankColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(width: 12),
-                                    // Player Name
-                                    Expanded(
-                                      child: Text(
-                                        entry.playerName,
-                                        style: GoogleFonts.fredoka(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimaryLight,
-                                        ),
-                                      ),
-                                    ),
-                                    // Score / Rating
-                                    Text(
-                                      '${entry.rating} MMR',
-                                      style: GoogleFonts.fredoka(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.primaryYellow,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                child: RefreshIndicator(
+                  onRefresh: _load,
+                  color: AppColors.primaryYellow,
+                  child: _isLoading
+                      ? ListView.builder(
+                          itemCount: 8,
+                          itemBuilder: (context, index) =>
+                              const SkeletonListTile(),
+                        )
+                      : _entries.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            EmptyStateView(
+                              title: _activeTab == LeaderboardTab.friends
+                                  ? 'No friends yet'
+                                  : 'No rankings yet',
+                              description: _activeTab == LeaderboardTab.friends
+                                  ? 'Add friends to see how you compare.'
+                                  : 'Play a ranked match to appear on the leaderboard.',
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
                           ),
+                          itemCount: _entries.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final entry = _entries[index];
+                            final isTop3 = entry.rank <= 3;
+                            final rankColor = entry.rank == 1
+                                ? AppColors.primaryYellow
+                                : entry.rank == 2
+                                ? AppColors.skyBlue
+                                : entry.rank == 3
+                                ? AppColors.primaryOrange
+                                : AppColors.textMuted;
+
+                            return CartoonCard(
+                              color: entry.isCurrentUser
+                                  ? AppColors.royalBlue
+                                  : AppColors.surfaceCardDark,
+                              bevelColor: entry.isCurrentUser
+                                  ? AppColors.royalBlueBevel
+                                  : AppColors.surfaceBorderDark,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 16,
+                              ),
+                              child: Row(
+                                children: [
+                                  // Rank Badge
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (isTop3) ...[
+                                        Icon(
+                                          LucideIcons.trophy,
+                                          size: 16,
+                                          color: rankColor,
+                                        ),
+                                        const SizedBox(width: 4),
+                                      ],
+                                      Text(
+                                        '#${entry.rank}',
+                                        style: GoogleFonts.fredoka(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: rankColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // Player Name
+                                  Expanded(
+                                    child: Text(
+                                      entry.playerName,
+                                      style: GoogleFonts.fredoka(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimaryLight,
+                                      ),
+                                    ),
+                                  ),
+                                  // Score / Rating
+                                  Text(
+                                    '${entry.rating} MMR',
+                                    style: GoogleFonts.fredoka(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primaryYellow,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
               ),
 
               // Sticky Current User Bottom Row
@@ -233,8 +287,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 CartoonCard(
                   color: AppColors.royalBlue,
                   bevelColor: AppColors.royalBlueBevel,
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                   child: Row(
                     children: [
                       Text(
@@ -252,11 +312,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                           children: [
                             Text(
                               _me!.playerName,
-                              style: GoogleFonts.fredoka(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
+                              style: GoogleFonts.fredoka(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
                             Text(
                               'Your Current Standing',
-                              style: GoogleFonts.nunito(fontSize: 12, color: Colors.white.withAlpha(200)),
+                              style: GoogleFonts.nunito(
+                                fontSize: 12,
+                                color: Colors.white.withAlpha(200),
+                              ),
                             ),
                           ],
                         ),
@@ -317,10 +384,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryYellow : AppColors.surfaceCardDark,
+          color: isSelected
+              ? AppColors.primaryYellow
+              : AppColors.surfaceCardDark,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? AppColors.primaryYellowBevel : AppColors.surfaceBorderDark,
+            color: isSelected
+                ? AppColors.primaryYellowBevel
+                : AppColors.surfaceBorderDark,
             width: 1.5,
           ),
         ),
@@ -329,7 +400,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           style: GoogleFonts.fredoka(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: isSelected ? AppColors.bgDarkNavy : AppColors.textSecondaryLight,
+            color: isSelected
+                ? AppColors.bgDarkNavy
+                : AppColors.textSecondaryLight,
           ),
         ),
       ),

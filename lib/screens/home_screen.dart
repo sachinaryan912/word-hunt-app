@@ -77,12 +77,14 @@ class _HomeScreenState extends State<HomeScreen> {
         secondaryButtonText: 'CLOSE',
         onSecondaryPressed: () => Navigator.of(context).pop(),
       );
-    } else if (!status.adClaimed) {
+    } else {
+      // Free gift is claimed — ad-bonus XP has no daily cap, so always offer
+      // another one.
       CartoonDialog.show(
         context: context,
         mascotPose: MascotPose.idle,
         title: 'WANT MORE XP?',
-        subtitle: "Today's free gift is claimed. Watch an ad for +10 more XP!",
+        subtitle: 'Watch an ad for +10 more XP — as many times as you like!',
         primaryButtonText: 'WATCH AD FOR 10 XP',
         onPrimaryPressed: () {
           Navigator.of(context).pop();
@@ -90,15 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         secondaryButtonText: 'CLOSE',
         onSecondaryPressed: () => Navigator.of(context).pop(),
-      );
-    } else {
-      CartoonDialog.show(
-        context: context,
-        mascotPose: MascotPose.idle,
-        title: 'ALL CLAIMED!',
-        subtitle: "You've claimed all of today's gifts — come back tomorrow!",
-        primaryButtonText: 'CLOSE',
-        onPrimaryPressed: () => Navigator.of(context).pop(),
       );
     }
   }
@@ -158,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
             context: context,
             mascotPose: MascotPose.celebrating,
             title: '+$xp XP CLAIMED!',
-            subtitle: "That's all for today — see you tomorrow!",
+            subtitle: 'Watch another ad anytime for more XP.',
             primaryButtonText: 'NICE!',
             onPrimaryPressed: () => Navigator.of(context).pop(),
           );
@@ -320,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Positioned.fill(
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(18),
-                            child: Container(color: Colors.black.withAlpha(140)),
+                            child: Container(color: Colors.black.withAlpha(180)),
                           ),
                         ),
                         // Mascot Explorer Floating Badge
