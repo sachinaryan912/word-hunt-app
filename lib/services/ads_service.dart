@@ -13,6 +13,7 @@ class AdsService {
   static const String homeBannerAdUnitId = 'ca-app-pub-7270999860067391/9836033507';
   static const String soloBannerAdUnitId = 'ca-app-pub-7270999860067391/7471548442';
   static const String multiplayerBannerAdUnitId = 'ca-app-pub-7270999860067391/5758127047';
+  static const String dailyChallengeBannerAdUnitId = 'ca-app-pub-7270999860067391/9576585579';
 
   // Interstitial — single placement (solo "Return Home").
   static const String interstitialAdUnitId = 'ca-app-pub-7270999860067391/1818882039';

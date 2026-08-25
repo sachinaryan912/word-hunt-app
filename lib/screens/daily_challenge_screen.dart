@@ -10,6 +10,8 @@ import '../widgets/cartoon_button.dart';
 import '../widgets/cartoon_card.dart';
 import '../widgets/state_indicators.dart';
 import '../services/api_client.dart';
+import '../services/ads_service.dart';
+import '../widgets/ad_banner_widget.dart';
 import 'solo_level_screen.dart';
 
 class DailyChallengeScreen extends StatefulWidget {
@@ -68,7 +70,12 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
                       actionLabel: 'RETRY',
                       onAction: _load,
                     )
-                  : _buildContent(_challenge!),
+                  : Column(
+                      children: [
+                        Expanded(child: _buildContent(_challenge!)),
+                        const AdBannerWidget(adUnitId: AdsService.dailyChallengeBannerAdUnitId),
+                      ],
+                    ),
         ),
       ),
     );
