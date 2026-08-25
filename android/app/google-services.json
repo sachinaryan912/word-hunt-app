@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1081827987644",
+    "project_id": "word-hunting-game",
+    "storage_bucket": "word-hunting-game.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1081827987644:android:d60d7be1ceef60e6e2c0b9",
+        "android_client_info": {
+          "package_name": "com.cluifyy.word_hunting_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1081827987644-86bfjtkkd2r472c3g34a81h54crcs9dl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cluifyy.word_hunting_app",
+            "certificate_hash": "a0d66596083987e8dce78b473c5567d0e9bd5198"
+          }
+        },
+        {
+          "client_id": "1081827987644-dcsa73bncaieg82uekmfujf44f03o22v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cluifyy.word_hunting_app",
+            "certificate_hash": "d814bb29f832216d6c2bc291a2d01e138c9d152a"
+          }
+        },
+        {
+          "client_id": "1081827987644-0idliiqvo8ebhuelp94vdas116asgn7t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDP2HU9F31Le4abKcwmwe7jhnvMl1k34Wk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1081827987644-0idliiqvo8ebhuelp94vdas116asgn7t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
