@@ -20,6 +20,9 @@ import 'matchmaking_screen.dart';
 import 'solo_level_screen.dart';
 import 'private_room_screen.dart';
 import 'daily_challenge_screen.dart';
+import 'friend_invite_sheet.dart';
+import 'friend_match_connecting_screen.dart';
+import '../state/friend_match_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int tabIndex)? onNavigateTab;
@@ -413,6 +416,56 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ).animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.05, end: 0),
+
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildModeCard(
+                        context,
+                        title: 'Quick Match',
+                        subtitle: 'Real-Time Random Opponent',
+                        icon: LucideIcons.zap,
+                        cardColor: AppColors.surfaceCardDark,
+                        iconColor: AppColors.royalBlue,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const MatchmakingScreen()),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildModeCard(
+                        context,
+                        title: 'Play with Friends',
+                        subtitle: 'Invite & Battle Live',
+                        icon: LucideIcons.userPlus,
+                        cardColor: AppColors.surfaceCardDark,
+                        iconColor: AppColors.freshGreen,
+                        onTap: () {
+                          FriendInviteSheet.show(
+                            context,
+                            context.read<SessionState>().apiClient,
+                            (friendUid, friendName) {
+                              context.read<FriendMatchProvider>().sendInvite(friendUid, friendName);
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => FriendMatchConnectingScreen(
+                                    peerName: friendName,
+                                    showCancel: true,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ).animate().fadeIn(duration: 400.ms, delay: 220.ms).slideY(begin: 0.05, end: 0),
 
                 const SizedBox(height: 14),
 

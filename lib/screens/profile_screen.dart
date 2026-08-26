@@ -195,7 +195,7 @@ class ProfileScreen extends StatelessWidget {
                     _buildStatTile('Rating', '${profile.rating}', LucideIcons.trophy, AppColors.primaryYellow),
                     _buildStatTile('Total Games', '${profile.totalGames}', LucideIcons.gamepad2, AppColors.skyBlue),
                     _buildStatTile('Total Wins', '${profile.totalWins}', LucideIcons.award, AppColors.freshGreen),
-                    _buildStatTile('Win Rate', '${profile.winRate}%', LucideIcons.percent, AppColors.coral),
+                    _buildStatTile('Win Rate', '${profile.winRate.round()}%', LucideIcons.percent, AppColors.coral),
                     _buildStatTile('Best Score', '${profile.bestScore}', LucideIcons.flame, AppColors.primaryOrange),
                     _buildStatTile('Win Streak', '${profile.winStreak}', LucideIcons.zap, AppColors.purple),
                   ],
@@ -290,18 +290,24 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: accentColor),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: GoogleFonts.fredoka(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimaryLight,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: GoogleFonts.fredoka(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimaryLight,
+              ),
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: GoogleFonts.nunito(
               fontSize: 11,
               color: AppColors.textSecondaryLight,

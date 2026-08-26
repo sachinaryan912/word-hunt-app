@@ -295,8 +295,9 @@ class _PrivateRoomScreenState extends State<PrivateRoomScreen> {
                                                 context
                                                     .read<SessionState>()
                                                     .apiClient,
-                                                (friendUid) => roomProvider
-                                                    .invite(friendUid),
+                                                (friendUid, friendName) =>
+                                                    roomProvider
+                                                        .invite(friendUid),
                                               ),
                                         ),
                                       ],

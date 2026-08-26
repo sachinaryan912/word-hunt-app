@@ -217,12 +217,34 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
           const Spacer(),
 
           if (challenge.personalBest != null) ...[
-            Text(
-              "Come back in ${_formatCountdown(_timeUntilNextPuzzle)} for tomorrow's puzzle",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondaryLight),
+            SizedBox(
+              width: double.infinity,
+              child: Column(
+                children: [
+                  Text(
+                    'NEXT PUZZLE IN',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.fredoka(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                      color: AppColors.textSecondaryLight,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _formatCountdown(_timeUntilNextPuzzle),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.fredoka(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryYellow,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
           ],
 
           // CTA Action Button

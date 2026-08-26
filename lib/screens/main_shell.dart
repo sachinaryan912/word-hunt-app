@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/update_service.dart';
+import '../state/friend_match_provider.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/cartoon_dialog.dart';
 import '../widgets/mascot_widget.dart';
+import 'friend_match_connecting_screen.dart';
 import 'home_screen.dart';
 import 'leaderboard_screen.dart';
 import 'profile_screen.dart';
@@ -26,6 +28,53 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     _currentIndex = widget.initialTab;
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+    context.read<FriendMatchProvider>().addListener(_onFriendMatchChanged);
+    // Covers a cold start from a tapped notification: the invite can arrive
+    // (via NotificationService's getInitialMessage handling) before this
+    // widget even exists, so notifyListeners() fires before the listener
+    // above is attached and would otherwise be missed entirely.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onFriendMatchChanged());
+  }
+
+  @override
+  void dispose() {
+    context.read<FriendMatchProvider>().removeListener(_onFriendMatchChanged);
+    super.dispose();
+  }
+
+  void _onFriendMatchChanged() {
+    final provider = context.read<FriendMatchProvider>();
+    final invite = provider.incomingInvite;
+    if (invite == null) return;
+    // Consume it immediately so a rebuild (or a second invite arriving
+    // later) doesn't stack duplicate dialogs.
+    provider.dismissIncoming();
+
+    CartoonDialog.show(
+      context: context,
+      mascotPose: MascotPose.idle,
+      title: 'MATCH INVITE',
+      subtitle: '${invite.fromDisplayName} wants to play a match with you right now.',
+      primaryButtonText: 'ACCEPT',
+      onPrimaryPressed: () {
+        Navigator.of(context).pop();
+        provider.accept(invite.inviteId);
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => FriendMatchConnectingScreen(
+              peerName: invite.fromDisplayName,
+              showCancel: false,
+            ),
+          ),
+        );
+      },
+      secondaryButtonText: 'DECLINE',
+      onSecondaryPressed: () {
+        Navigator.of(context).pop();
+        provider.decline(invite.inviteId);
+      },
+      barrierDismissible: false,
+    );
   }
 
   void _switchTab(int index) {

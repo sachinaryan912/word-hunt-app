@@ -15,6 +15,7 @@ import 'services/update_service.dart';
 import 'state/session_state.dart';
 import 'state/match_provider.dart';
 import 'state/room_provider.dart';
+import 'state/friend_match_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,9 +45,6 @@ class WordHuntingApp extends StatelessWidget {
         ProxyProvider<AuthService, SocketService>(
           update: (_, auth, previous) => previous ?? SocketService(auth),
         ),
-        ProxyProvider<ApiClient, NotificationService>(
-          update: (_, api, previous) => previous ?? NotificationService(api),
-        ),
         ProxyProvider<ApiClient, UpdateService>(
           update: (_, api, previous) => previous ?? UpdateService(api),
         ),
@@ -71,6 +69,13 @@ class WordHuntingApp extends StatelessWidget {
         ChangeNotifierProxyProvider<SocketService, RoomProvider>(
           create: (context) => RoomProvider(context.read<SocketService>()),
           update: (_, socket, previous) => previous ?? RoomProvider(socket),
+        ),
+        ChangeNotifierProxyProvider<SocketService, FriendMatchProvider>(
+          create: (context) => FriendMatchProvider(context.read<SocketService>()),
+          update: (_, socket, previous) => previous ?? FriendMatchProvider(socket),
+        ),
+        ProxyProvider2<ApiClient, FriendMatchProvider, NotificationService>(
+          update: (_, api, friendMatch, previous) => previous ?? NotificationService(api, friendMatch),
         ),
       ],
       child: MaterialApp(

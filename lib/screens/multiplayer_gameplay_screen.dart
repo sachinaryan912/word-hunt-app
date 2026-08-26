@@ -103,24 +103,44 @@ class _MultiplayerGameplayScreenState extends State<MultiplayerGameplayScreen> {
       if (_chatSheetOpen && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => MatchResultScreen(
-            isWin: info.isWin,
-            score: info.myScore,
-            wordsFoundCount: myWordsFound,
-            accuracyPercent: totalTargets == 0
-                ? 0
-                : ((myWordsFound / totalTargets) * 100).round(),
-            durationSeconds: _secondsElapsed,
-            opponentName: state.opponent.name,
-            opponentUid: state.opponent.id,
-            matchId: matchProvider.matchId,
-            ratingDelta: info.myRatingDelta,
-            newRating: info.myNewRating,
+
+      void goToResult() {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => MatchResultScreen(
+              isWin: info.isWin,
+              score: info.myScore,
+              wordsFoundCount: myWordsFound,
+              accuracyPercent: totalTargets == 0
+                  ? 0
+                  : ((myWordsFound / totalTargets) * 100).round(),
+              durationSeconds: _secondsElapsed,
+              opponentName: state.opponent.name,
+              opponentUid: state.opponent.id,
+              matchId: matchProvider.matchId,
+              ratingDelta: info.myRatingDelta,
+              newRating: info.myNewRating,
+            ),
           ),
-        ),
-      );
+        );
+      }
+
+      if (info.wasAbandonedByOpponent) {
+        CartoonDialog.show(
+          context: context,
+          mascotPose: MascotPose.idle,
+          title: 'GAME ABANDONED',
+          subtitle: '${state.opponent.name} left the match. You win by default.',
+          primaryButtonText: 'CONTINUE',
+          onPrimaryPressed: () {
+            Navigator.of(context).pop();
+            goToResult();
+          },
+          barrierDismissible: false,
+        );
+      } else {
+        goToResult();
+      }
     }
   }
 

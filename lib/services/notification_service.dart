@@ -3,6 +3,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'api_client.dart';
 import 'navigation_service.dart';
 import '../screens/private_room_screen.dart';
+import '../screens/friend_requests_sheet.dart';
+import '../state/friend_match_provider.dart';
 
 /// Requests notification permission, obtains the FCM token, and keeps it
 /// synced to the backend so the server can push (friend requests, room
@@ -11,7 +13,8 @@ import '../screens/private_room_screen.dart';
 /// that room's join flow.
 class NotificationService {
   final ApiClient apiClient;
-  NotificationService(this.apiClient);
+  final FriendMatchProvider friendMatchProvider;
+  NotificationService(this.apiClient, this.friendMatchProvider);
 
   Future<void> initialize() async {
     final messaging = FirebaseMessaging.instance;
@@ -38,11 +41,32 @@ class NotificationService {
 
   void _handleTap(RemoteMessage message) {
     final data = message.data;
-    if (data['type'] != 'room_invite') return;
-    final code = data['code'] as String?;
-    if (code == null) return;
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(builder: (_) => PrivateRoomScreen(initialJoinCode: code)),
-    );
+    switch (data['type']) {
+      case 'room_invite':
+        final code = data['code'] as String?;
+        if (code == null) return;
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (_) => PrivateRoomScreen(initialJoinCode: code)),
+        );
+        break;
+      case 'friend_request':
+        final context = navigatorKey.currentContext;
+        if (context == null) return;
+        FriendRequestsSheet.show(context, apiClient);
+        break;
+      case 'friend_match_invite':
+        final inviteId = data['inviteId'] as String?;
+        final fromUid = data['fromUid'] as String?;
+        final fromDisplayName = data['fromDisplayName'] as String? ?? 'Your friend';
+        if (inviteId == null || fromUid == null) return;
+        // Opening the notification only surfaces the same Accept/Decline
+        // prompt a live in-app invite shows — it doesn't accept on its own.
+        friendMatchProvider.showIncomingFromPush(
+          inviteId: inviteId,
+          fromUid: fromUid,
+          fromDisplayName: fromDisplayName,
+        );
+        break;
+    }
   }
 }

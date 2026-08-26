@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../state/session_state.dart';
 import '../state/match_provider.dart';
 import '../state/room_provider.dart';
+import '../state/friend_match_provider.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../services/sound_service.dart';
@@ -51,6 +52,7 @@ class _SplashScreenState extends State<SplashScreen> {
         if (uid != null && mounted) {
           context.read<MatchProvider>().startListening(uid);
           context.read<RoomProvider>().startListening();
+          context.read<FriendMatchProvider>().startListening();
           unawaited(context.read<NotificationService>().initialize());
         }
       }

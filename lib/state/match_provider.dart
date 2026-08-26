@@ -12,6 +12,7 @@ class MatchEndInfo {
   final int myRatingDelta;
   final int myNewRating;
   final bool isWin;
+  final String reason;
 
   const MatchEndInfo({
     required this.winnerId,
@@ -20,7 +21,12 @@ class MatchEndInfo {
     required this.myRatingDelta,
     required this.myNewRating,
     required this.isWin,
+    required this.reason,
   });
+
+  /// True when I won only because my opponent left/disconnected mid-match,
+  /// rather than by outplaying them.
+  bool get wasAbandonedByOpponent => isWin && reason == 'forfeit';
 }
 
 /// Live multiplayer state, fed entirely by authoritative Socket.IO events.
@@ -215,6 +221,7 @@ class MatchProvider extends ChangeNotifier {
     if (uid == null) return;
     final json = _asMap(data);
     final winnerId = json['winnerId'] as String?;
+    final reason = json['reason'] as String? ?? 'completed';
     final scores = _asMap(json['scores']);
     final deltas = _asMap(json['ratingDeltas']);
     final newRatings = _asMap(json['newRatings']);
@@ -227,6 +234,7 @@ class MatchProvider extends ChangeNotifier {
       myRatingDelta: deltas[uid] as int? ?? 0,
       myNewRating: newRatings[uid] as int? ?? (state?.player.rating ?? 0),
       isWin: winnerId == uid,
+      reason: reason,
     );
     status = MatchmakingStatus.ended;
     notifyListeners();

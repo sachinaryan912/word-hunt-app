@@ -11,6 +11,7 @@ import '../services/notification_service.dart';
 import '../state/session_state.dart';
 import '../state/match_provider.dart';
 import '../state/room_provider.dart';
+import '../state/friend_match_provider.dart';
 import '../widgets/cartoon_background.dart';
 import '../widgets/cartoon_button.dart';
 import '../widgets/google_logo.dart';
@@ -57,10 +58,10 @@ class _WelcomeAuthScreenState extends State<WelcomeAuthScreen> {
       await context.read<SessionState>().bootstrap();
       if (!mounted) return;
       await _afterAuthSuccess();
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google sign-in was cancelled or failed — try again.')),
+          SnackBar(content: Text('Google sign-in failed: $e')),
         );
       }
     } finally {
@@ -73,6 +74,7 @@ class _WelcomeAuthScreenState extends State<WelcomeAuthScreen> {
     if (uid != null && mounted) {
       context.read<MatchProvider>().startListening(uid);
       context.read<RoomProvider>().startListening();
+      context.read<FriendMatchProvider>().startListening();
       unawaited(context.read<NotificationService>().initialize());
     }
     final prefs = await SharedPreferences.getInstance();

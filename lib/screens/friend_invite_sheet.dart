@@ -7,10 +7,14 @@ import '../widgets/cartoon_card.dart';
 
 class FriendInviteSheet extends StatefulWidget {
   final ApiClient apiClient;
-  final void Function(String friendUid) onInvite;
+  final void Function(String friendUid, String friendDisplayName) onInvite;
   const FriendInviteSheet({super.key, required this.apiClient, required this.onInvite});
 
-  static void show(BuildContext context, ApiClient apiClient, void Function(String friendUid) onInvite) {
+  static void show(
+    BuildContext context,
+    ApiClient apiClient,
+    void Function(String friendUid, String friendDisplayName) onInvite,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surfaceCardDark,
@@ -108,7 +112,7 @@ class _FriendInviteSheetState extends State<FriendInviteSheet> {
                                 CartoonButton(
                                   text: 'INVITE',
                                   onPressed: () {
-                                    widget.onInvite(friend.uid);
+                                    widget.onInvite(friend.uid, friend.displayName);
                                     Navigator.of(context).pop();
                                   },
                                   variant: CartoonButtonVariant.primary,
